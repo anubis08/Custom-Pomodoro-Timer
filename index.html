@@ -1,0 +1,720 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Still — Pomodoro</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg: #080808;
+  --panel: #111111;
+  --muted: #777;
+  --white: #f4f4f0;
+  --accent: #c4f0c5;
+  --line: #252525;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--white);
+  font-family: 'Inter', sans-serif;
+  display: flex;
+  justify-content: center;
+  padding: 35px 20px;
+}
+
+.app {
+  width: 100%;
+  max-width: 850px;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 25px;
+  border-bottom: 1px solid var(--line);
+}
+
+.logo {
+  font-size: 19px;
+  font-weight: 500;
+  letter-spacing: 5px;
+}
+
+.logo span { color: var(--accent); }
+
+.header-note {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 2px;
+}
+
+main {
+  padding: 65px 0 40px;
+  text-align: center;
+}
+
+.eyebrow {
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 3px;
+  margin-bottom: 30px;
+}
+
+.modes {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 42px;
+}
+
+.mode {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: #888;
+  padding: 11px 18px;
+  font-size: 11px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: .2s;
+  border-radius: 3px;
+}
+
+.mode.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: #c4f0c50c;
+}
+
+.timer-wrap {
+  width: 290px;
+  height: 290px;
+  margin: 0 auto 35px;
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+svg.progress {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg);
+}
+
+.track, .progress-circle {
+  fill: none;
+  stroke-width: 2;
+}
+
+.track { stroke: #242424; }
+
+.progress-circle {
+  stroke: var(--accent);
+  stroke-linecap: round;
+  transition: stroke-dashoffset .5s linear;
+}
+
+.timer-content { position: relative; }
+
+.time {
+  font-size: clamp(64px, 12vw, 83px);
+  font-weight: 300;
+  letter-spacing: -5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.timer-label {
+  font-family: 'DM Mono', monospace;
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 3px;
+  margin-top: 10px;
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 35px 0 25px;
+}
+
+button { font-family: inherit; }
+
+.primary {
+  background: var(--accent);
+  color: #101510;
+  border: none;
+  padding: 15px 38px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  border-radius: 3px;
+  cursor: pointer;
+  min-width: 145px;
+  transition: .2s;
+}
+
+.primary:hover { background: #dcf8dd; }
+
+.secondary {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: #aaa;
+  padding: 15px 20px;
+  border-radius: 3px;
+  font-size: 11px;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+
+.secondary:hover { border-color: #777; color: white; }
+
+.session-info {
+  font-family: 'DM Mono', monospace;
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 2px;
+  margin-top: 25px;
+}
+
+.session-info span { color: var(--accent); }
+
+.lower {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 35px;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 24px;
+  border-radius: 4px;
+}
+
+.panel-title {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  margin-bottom: 23px;
+  font-family: 'DM Mono', monospace;
+}
+
+.sound-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.sound-row:last-child { border: none; }
+
+.sound-name {
+  font-size: 12px;
+  color: #ddd;
+}
+
+.sound-desc {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 5px;
+}
+
+.toggle {
+  width: 38px;
+  height: 21px;
+  border-radius: 20px;
+  background: #333;
+  position: relative;
+  cursor: pointer;
+  border: none;
+  transition: .2s;
+  flex-shrink: 0;
+}
+
+.toggle::after {
+  content: '';
+  width: 15px;
+  height: 15px;
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  background: #aaa;
+  border-radius: 50%;
+  transition: .2s;
+}
+
+.toggle.on { background: #527c56; }
+
+.toggle.on::after {
+  left: 20px;
+  background: white;
+}
+
+.settings-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 16px 0;
+  font-size: 12px;
+  color: #bbb;
+}
+
+.settings-row input {
+  width: 52px;
+  background: #1c1c1c;
+  border: 1px solid #333;
+  color: var(--accent);
+  padding: 7px;
+  text-align: center;
+  font-family: 'DM Mono', monospace;
+  border-radius: 3px;
+}
+
+.settings-row input:focus { outline: 1px solid var(--accent); }
+
+footer {
+  border-top: 1px solid var(--line);
+  padding-top: 22px;
+  margin-top: 30px;
+  display: flex;
+  justify-content: space-between;
+  color: #555;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+}
+
+@media(max-width:550px) {
+  body { padding: 22px 16px; }
+  main { padding-top: 45px; }
+  .lower { grid-template-columns: 1fr; }
+  .timer-wrap { width: 260px; height: 260px; }
+  footer { gap: 10px; font-size: 8px; }
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<header>
+  <div class="logo">STILL<span>.</span></div>
+  <div class="header-note">FOCUS WITH INTENTION</div>
+</header>
+
+<main>
+  <div class="eyebrow">YOUR PERSONAL FOCUS SPACE</div>
+
+  <div class="modes">
+    <button class="mode active" data-mode="focus">FOCUS</button>
+    <button class="mode" data-mode="short">SHORT BREAK</button>
+    <button class="mode" data-mode="long">LONG BREAK</button>
+  </div>
+
+  <div class="timer-wrap">
+    <svg class="progress" viewBox="0 0 290 290">
+      <circle class="track" cx="145" cy="145" r="137"/>
+      <circle class="progress-circle" id="progress"
+        cx="145" cy="145" r="137"
+        stroke-dasharray="860.8"
+        stroke-dashoffset="0"/>
+    </svg>
+
+    <div class="timer-content">
+      <div class="time" id="time">25:00</div>
+      <div class="timer-label" id="timerLabel">TIME TO FOCUS</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="primary" id="startBtn">START SESSION</button>
+    <button class="secondary" id="resetBtn">RESET ↺</button>
+  </div>
+
+  <div class="session-info">
+    SESSION <span id="sessions">01</span> &nbsp;·&nbsp;
+    <span id="status">READY WHEN YOU ARE</span>
+  </div>
+</main>
+
+<div class="lower">
+
+  <section class="panel">
+    <div class="panel-title">SOUND EXPERIENCE</div>
+
+    <div class="sound-row">
+      <div>
+        <div class="sound-name">Ambient atmosphere</div>
+        <div class="sound-desc">Soft, calming soundscape</div>
+      </div>
+      <button class="toggle" id="ambientToggle"
+        aria-label="Toggle ambient music" aria-pressed="false"></button>
+    </div>
+
+    <div class="sound-row">
+      <div>
+        <div class="sound-name">Relaxing house</div>
+        <div class="sound-desc">Smooth electronic grooves</div>
+      </div>
+      <button class="toggle" id="houseToggle"
+        aria-label="Toggle relaxing house music" aria-pressed="false"></button>
+    </div>
+
+    <div class="sound-row">
+      <div>
+        <div class="sound-name">Gentle notifications</div>
+        <div class="sound-desc">Soft start and finish chimes</div>
+      </div>
+      <button class="toggle on" id="beepToggle"
+        aria-label="Toggle notification sounds" aria-pressed="true"></button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-title">CUSTOMIZE SESSION</div>
+
+    <div class="settings-row">
+      <label for="focusLength">Focus duration</label>
+      <input type="number" id="focusLength" min="1" max="120" value="25">
+    </div>
+
+    <div class="settings-row">
+      <label for="shortLength">Short break</label>
+      <input type="number" id="shortLength" min="1" max="60" value="5">
+    </div>
+
+    <div class="settings-row">
+      <label for="longLength">Long break</label>
+      <input type="number" id="longLength" min="1" max="90" value="15">
+    </div>
+
+    <div style="font-size:10px;color:#555;margin-top:20px;line-height:1.6">
+      Your settings apply when you reset or switch sessions.
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <span>STILL © 2026</span>
+  <span>ONE THING AT A TIME.</span>
+</footer>
+
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+let mode = 'focus';
+let durations = { focus:25, short:5, long:15 };
+let remaining = 25 * 60;
+let total = remaining;
+let running = false;
+let interval = null;
+let sessions = 0;
+let audioContext = null;
+let soundNodes = [];
+let ambientOn = false;
+let houseOn = false;
+let beepsOn = true;
+
+const circumference = 2 * Math.PI * 137;
+
+function audio() {
+  if (!audioContext) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    audioContext = new AC();
+  }
+  if (audioContext.state === 'suspended') audioContext.resume();
+  return audioContext;
+}
+
+function beep(frequency=660, duration=.5, volume=.055) {
+  if (!beepsOn) return;
+  const ctx = audio();
+  if (!ctx) return;
+
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+
+  osc.type = 'sine';
+  osc.frequency.value = frequency;
+
+  gain.gain.setValueAtTime(.0001, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(volume, ctx.currentTime+.05);
+  gain.gain.exponentialRampToValueAtTime(.0001, ctx.currentTime+duration);
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start();
+  osc.stop(ctx.currentTime+duration+.05);
+}
+
+function chime(type) {
+  if (type === 'start') {
+    beep(523, .45);
+    setTimeout(() => beep(659, .5), 250);
+  } else {
+    beep(659, .5);
+    setTimeout(() => beep(784, .6), 280);
+    setTimeout(() => beep(1047, .8), 600);
+  }
+}
+
+function render() {
+  const mins = Math.floor(remaining/60);
+  const secs = remaining%60;
+
+  $('time').textContent =
+    String(mins).padStart(2,'0') + ':' +
+    String(secs).padStart(2,'0');
+
+  const progress = total ? remaining/total : 0;
+  $('progress').style.strokeDashoffset =
+    circumference * (1-progress);
+
+  document.title = $('time').textContent + ' — STILL';
+}
+
+function setMode(next) {
+  pause();
+  mode = next;
+  remaining = durations[mode]*60;
+  total = remaining;
+
+  document.querySelectorAll('.mode').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === mode);
+  });
+
+  $('timerLabel').textContent = {
+    focus:'TIME TO FOCUS',
+    short:'TAKE A BREATH',
+    long:'REST & RESET'
+  }[mode];
+
+  $('status').textContent = 'READY WHEN YOU ARE';
+  $('startBtn').textContent = 'START SESSION';
+  render();
+}
+
+function start() {
+  if (running) return;
+  audio();
+  running = true;
+  $('startBtn').textContent = 'PAUSE SESSION';
+  $('status').textContent = 'IN THE FLOW';
+  chime('start');
+
+  interval = setInterval(() => {
+    remaining--;
+    render();
+
+    if (remaining <= 0) {
+      pause();
+      chime('end');
+
+      if (mode === 'focus') {
+        sessions++;
+        $('sessions').textContent =
+          String(sessions).padStart(2,'0');
+        setMode(sessions % 4 === 0 ? 'long' : 'short');
+      } else {
+        setMode('focus');
+      }
+
+      $('status').textContent = 'SESSION COMPLETED';
+      $('startBtn').textContent = 'START SESSION';
+    }
+  }, 1000);
+}
+
+function pause() {
+  running = false;
+  clearInterval(interval);
+  $('startBtn').textContent = 'RESUME SESSION';
+  if ($('status').textContent === 'IN THE FLOW') {
+    $('status').textContent = 'PAUSED';
+  }
+}
+
+function reset() {
+  pause();
+  remaining = durations[mode]*60;
+  total = remaining;
+  $('status').textContent = 'READY WHEN YOU ARE';
+  $('startBtn').textContent = 'START SESSION';
+  render();
+}
+
+$('startBtn').onclick = () => running ? pause() : start();
+$('resetBtn').onclick = reset;
+
+document.querySelectorAll('.mode').forEach(btn => {
+  btn.onclick = () => setMode(btn.dataset.mode);
+});
+
+// Duration settings
+const fields = {
+  focus:'focusLength',
+  short:'shortLength',
+  long:'longLength'
+};
+
+Object.entries(fields).forEach(([key,id]) => {
+  $(id).addEventListener('change', () => {
+    const value = Math.min(120, Math.max(1,
+      parseInt($(id).value,10) || durations[key]));
+    $(id).value = value;
+    durations[key] = value;
+
+    if (mode === key && !running) reset();
+  });
+});
+
+// Sound generation
+function stopMusic() {
+  soundNodes.forEach(node => {
+    try { node.stop(); } catch(e) {}
+    try { node.disconnect(); } catch(e) {}
+  });
+  soundNodes = [];
+}
+
+function makeTone(ctx, freq, type, volume, destination) {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+
+  osc.type = type;
+  osc.frequency.value = freq;
+  gain.gain.value = volume;
+
+  osc.connect(gain);
+  gain.connect(destination || ctx.destination);
+  osc.start();
+
+  soundNodes.push(osc, gain);
+  return {osc,gain};
+}
+
+function startAmbient() {
+  const ctx = audio();
+  if (!ctx) return;
+
+  const master = ctx.createGain();
+  master.gain.value = .045;
+  master.connect(ctx.destination);
+
+  [110,164.81,220].forEach((freq,i) => {
+    const {osc} = makeTone(ctx,freq,'sine',.3,master);
+    osc.detune.value = i * 2;
+  });
+}
+
+function startHouse() {
+  const ctx = audio();
+  if (!ctx) return;
+
+  const master = ctx.createGain();
+  master.gain.value = .065;
+  master.connect(ctx.destination);
+
+  const notes = [110,138.59,164.81,138.59];
+  let step = 0;
+
+  function beat() {
+    if (!houseOn) return;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'triangle';
+    osc.frequency.value = notes[step % notes.length];
+
+    gain.gain.setValueAtTime(.0001,ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(.6,ctx.currentTime+.025);
+    gain.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+.24);
+
+    osc.connect(gain);
+    gain.connect(master);
+    osc.start();
+    osc.stop(ctx.currentTime+.26);
+
+    step++;
+  }
+
+  beat();
+  const loop = setInterval(beat,500);
+  soundNodes.push({stop:()=>clearInterval(loop),disconnect:()=>master.disconnect()});
+}
+
+function toggleSound(id,type) {
+  audio();
+
+  if (type === 'ambient') {
+    ambientOn = !ambientOn;
+    if (ambientOn) houseOn = false;
+  } else {
+    houseOn = !houseOn;
+    if (houseOn) ambientOn = false;
+  }
+
+  stopMusic();
+
+  if (ambientOn) startAmbient();
+  if (houseOn) startHouse();
+
+  updateToggles();
+}
+
+function updateToggles() {
+  $('ambientToggle').classList.toggle('on',ambientOn);
+  $('houseToggle').classList.toggle('on',houseOn);
+  $('beepToggle').classList.toggle('on',beepsOn);
+
+  $('ambientToggle').setAttribute('aria-pressed',ambientOn);
+  $('houseToggle').setAttribute('aria-pressed',houseOn);
+  $('beepToggle').setAttribute('aria-pressed',beepsOn);
+}
+
+$('ambientToggle').onclick = () =>
+  toggleSound('ambientToggle','ambient');
+
+$('houseToggle').onclick = () =>
+  toggleSound('houseToggle','house');
+
+$('beepToggle').onclick = () => {
+  beepsOn = !beepsOn;
+  updateToggles();
+};
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+
+  if (e.code === 'Space') {
+    e.preventDefault();
+    running ? pause() : start();
+  }
+
+  if (e.key.toLowerCase() === 'r') reset();
+});
+
+render();
+</script>
+</body>
+</html>
