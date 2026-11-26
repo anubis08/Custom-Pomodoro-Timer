@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -298,6 +297,16 @@ footer {
   letter-spacing: 2px;
 }
 
+/* Keep the YouTube livestream player off-screen. */
+.stream-audio {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  width: 200px;
+  height: 200px;
+  overflow: hidden;
+}
+
 @media(max-width:550px) {
   body { padding: 22px 16px; }
   main { padding-top: 45px; }
@@ -416,6 +425,8 @@ footer {
 
 </div>
 
+<div id="streamAudio" class="stream-audio" aria-hidden="true"></div>
+
 <script>
 const $ = id => document.getElementById(id);
 
@@ -427,7 +438,6 @@ let running = false;
 let interval = null;
 let sessions = 0;
 let audioContext = null;
-let soundNodes = [];
 let ambientOn = false;
 let houseOn = false;
 let beepsOn = true;
@@ -586,83 +596,30 @@ Object.entries(fields).forEach(([key,id]) => {
   });
 });
 
-// Sound generation
+// YouTube livestreams
+const STREAMS = {
+  ambient: 'RrkrdYm3HPQ',
+  house: 'q770AP07Xqw'
+};
+
 function stopMusic() {
-  soundNodes.forEach(node => {
-    try { node.stop(); } catch(e) {}
-    try { node.disconnect(); } catch(e) {}
-  });
-  soundNodes = [];
+  $('streamAudio').replaceChildren();
 }
 
-function makeTone(ctx, freq, type, volume, destination) {
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
+function startStream(type) {
+  const iframe = document.createElement('iframe');
+  iframe.width = '200';
+  iframe.height = '200';
+  iframe.title = `${type} YouTube livestream`;
+  iframe.allow = 'autoplay; encrypted-media; picture-in-picture; web-share';
+  iframe.src =
+    `https://www.youtube.com/embed/${encodeURIComponent(STREAMS[type])}` +
+    '?autoplay=1&controls=0&mute=0&playsinline=1';
 
-  osc.type = type;
-  osc.frequency.value = freq;
-  gain.gain.value = volume;
-
-  osc.connect(gain);
-  gain.connect(destination || ctx.destination);
-  osc.start();
-
-  soundNodes.push(osc, gain);
-  return {osc,gain};
+  $('streamAudio').replaceChildren(iframe);
 }
 
-function startAmbient() {
-  const ctx = audio();
-  if (!ctx) return;
-
-  const master = ctx.createGain();
-  master.gain.value = .045;
-  master.connect(ctx.destination);
-
-  [110,164.81,220].forEach((freq,i) => {
-    const {osc} = makeTone(ctx,freq,'sine',.3,master);
-    osc.detune.value = i * 2;
-  });
-}
-
-function startHouse() {
-  const ctx = audio();
-  if (!ctx) return;
-
-  const master = ctx.createGain();
-  master.gain.value = .065;
-  master.connect(ctx.destination);
-
-  const notes = [110,138.59,164.81,138.59];
-  let step = 0;
-
-  function beat() {
-    if (!houseOn) return;
-
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    osc.type = 'triangle';
-    osc.frequency.value = notes[step % notes.length];
-
-    gain.gain.setValueAtTime(.0001,ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(.6,ctx.currentTime+.025);
-    gain.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+.24);
-
-    osc.connect(gain);
-    gain.connect(master);
-    osc.start();
-    osc.stop(ctx.currentTime+.26);
-
-    step++;
-  }
-
-  beat();
-  const loop = setInterval(beat,500);
-  soundNodes.push({stop:()=>clearInterval(loop),disconnect:()=>master.disconnect()});
-}
-
-function toggleSound(id,type) {
+function toggleSound(id, type) {
   audio();
 
   if (type === 'ambient') {
@@ -675,8 +632,8 @@ function toggleSound(id,type) {
 
   stopMusic();
 
-  if (ambientOn) startAmbient();
-  if (houseOn) startHouse();
+  if (ambientOn) startStream('ambient');
+  if (houseOn) startStream('house');
 
   updateToggles();
 }
